@@ -92,6 +92,7 @@ class OrderTest extends TestCase
 
         $this->assertSame($first->json('data.id'), $second->json('data.id'));
         $this->assertDatabaseCount('orders', 1);
+        $this->assertDatabaseCount('outbox_messages', 1);
         $this->assertDatabaseHas('products', ['id' => $product->id, 'quantity' => 3]);
         Event::assertDispatchedTimes(OrderCompleted::class, 1);
     }

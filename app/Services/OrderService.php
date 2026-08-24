@@ -2,18 +2,25 @@
 
 namespace App\Services;
 
-use App\Events\OrderCompleted;
 use App\Exceptions\IdempotencyKeyConflict;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
+use App\Services\Outbox\OutboxRecorder;
+use App\Services\Outbox\OutboxRelay;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class OrderService
 {
+    public function __construct(
+        private readonly OutboxRecorder $outbox,
+        private readonly OutboxRelay $outboxRelay,
+    ) {}
+
     /**
      * @param  array<int, array{product_id: int, quantity: int}>  $items
      */
@@ -32,7 +39,7 @@ class OrderService
         $existing = $this->findExistingOrder($user, $idempotencyKey);
 
         if ($existing) {
-            return $this->replayOrConflict($existing, $requestHash);
+            return $this->finish($this->replayOrConflict($existing, $requestHash));
         }
 
         try {
@@ -94,6 +101,7 @@ class OrderService
                 ]);
 
                 $order->items()->createMany($orderItems);
+                $this->outbox->recordOrderCompleted($order);
 
                 return new OrderCreationResult($order->load('items'), false);
             });
@@ -107,8 +115,24 @@ class OrderService
             $result = $this->replayOrConflict($existing, $requestHash);
         }
 
+        return $this->finish($result);
+    }
+
+    private function finish(OrderCreationResult $result): OrderCreationResult
+    {
+        $outboxMessage = $this->outbox->recordOrderCompleted($result->order);
+
+        try {
+            $this->outboxRelay->publish($outboxMessage);
+        } catch (Throwable $exception) {
+            Log::warning('Immediate order event publish failed; outbox will retry', [
+                'order_id' => $result->order->id,
+                'outbox_message_id' => $outboxMessage->id,
+                'exception' => $exception::class,
+            ]);
+        }
+
         if (! $result->replayed) {
-            OrderCompleted::dispatch($result->order);
             Log::info('Order completed', [
                 'order_id' => $result->order->id,
                 'user_id' => $result->order->user_id,

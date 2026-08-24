@@ -6,7 +6,7 @@ Laravel application for purchasing products, unlocking achievements and badges, 
 
 1. An authenticated user creates an order.
 2. Stock is checked and reduced inside a database transaction.
-3. The completed order event is placed on the queue.
+3. The completed order event is saved to a transactional outbox and placed on the queue.
 4. Achievements are evaluated and unlocked once per user, firing `AchievementUnlocked`.
 5. A queued listener stores an unread achievement notification for the user.
 6. Badges are evaluated after each achievement evaluation.
@@ -24,6 +24,7 @@ Laravel application for purchasing products, unlocking achievements and badges, 
 - All money is stored as integer kobo. For example, ₦300 is stored as `30000`.
 - Orders support multiple products and store the product name and price at the time of purchase.
 - `Idempotency-Key` is required when creating an order to prevent duplicate orders on retries.
+- Completed orders and their events are committed together in a transactional outbox. Failed queue publishing is retried by the scheduler.
 - Achievements and badges are seeded and evaluated using database records.
 - Achievement notifications are stored in the database so users can see them after queued processing finishes.
 - A badge requires all of its linked achievements.
@@ -58,15 +59,17 @@ The seeders add:
 - Starter, Loyal, and Premium badges
 - A local demo user: `test@example.com` / `password`
 
-The queue worker starts automatically with Docker Compose. It processes achievement, badge, cashback, and transfer jobs.
+The queue worker starts automatically with Docker Compose. It processes achievement, badge, cashback, and transfer jobs. The scheduler retries unpublished outbox events every minute.
 
 Useful commands:
 
 ```bash
 docker compose ps
 docker compose logs -f worker
+docker compose logs -f scheduler
 docker compose logs -f web
 docker compose exec app php artisan migrate:status
+docker compose exec app php artisan outbox:relay
 docker compose down
 ```
 
@@ -80,6 +83,7 @@ docker compose down
 | `mysql` | Application database | `3307` |
 | `redis` | Queue and cache | `6380` |
 | `worker` | Laravel queue worker | No HTTP port |
+| `scheduler` | Retries unpublished outbox events | No HTTP port |
 
 ## Authentication
 
