@@ -6,14 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\User;
+use App\Services\PaymentAccountService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
-    public function login(LoginRequest $request): RedirectResponse
-    {
+    public function login(
+        LoginRequest $request,
+        PaymentAccountService $accounts,
+    ): RedirectResponse {
         $data = $request->validated();
 
         if (! Auth::attempt([
@@ -25,13 +28,17 @@ class AuthController extends Controller
                 ->withInput($request->only('email'));
         }
 
+        $accounts->assignDefault($request->user());
+
         $request->session()->regenerate();
 
         return redirect()->intended(route('home'));
     }
 
-    public function register(RegisterRequest $request): RedirectResponse
-    {
+    public function register(
+        RegisterRequest $request,
+        PaymentAccountService $accounts,
+    ): RedirectResponse {
         $data = $request->validated();
 
         $user = User::create([
@@ -40,6 +47,7 @@ class AuthController extends Controller
             'email' => $data['email'],
             'password' => $data['password'],
         ]);
+        $accounts->assignDefault($user);
 
         Auth::login($user);
         $request->session()->regenerate();

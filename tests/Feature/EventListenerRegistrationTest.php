@@ -6,6 +6,7 @@ use App\Events\AchievementsEvaluated;
 use App\Events\AchievementUnlocked;
 use App\Events\BadgeUnlocked;
 use App\Events\CashbackCreated;
+use App\Events\CashbackTransferRequested;
 use App\Events\OrderCompleted;
 use App\Listeners\CreateCashback;
 use App\Listeners\EvaluateAchievements;
@@ -35,6 +36,7 @@ class EventListenerRegistrationTest extends TestCase
             AchievementsEvaluated::class => EvaluateBadges::class,
             BadgeUnlocked::class => CreateCashback::class,
             CashbackCreated::class => TransferCashback::class,
+            CashbackTransferRequested::class => TransferCashback::class,
         ];
 
         foreach ($expectedListeners as $event => $listener) {

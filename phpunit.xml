@@ -29,6 +29,7 @@
         <env name="MAIL_MAILER" value="array" force="true"/>
         <env name="QUEUE_CONNECTION" value="sync" force="true"/>
         <env name="PAYMENT_PROVIDER" value="fake" force="true"/>
+        <env name="PAYSTACK_DEFAULT_RECIPIENT" value="" force="true"/>
         <env name="SESSION_DRIVER" value="array" force="true"/>
         <env name="PULSE_ENABLED" value="false" force="true"/>
         <env name="TELESCOPE_ENABLED" value="false" force="true"/>
@@ -44,6 +45,7 @@
         <server name="MAIL_MAILER" value="array"/>
         <server name="QUEUE_CONNECTION" value="sync"/>
         <server name="PAYMENT_PROVIDER" value="fake"/>
+        <server name="PAYSTACK_DEFAULT_RECIPIENT" value=""/>
         <server name="SESSION_DRIVER" value="array"/>
         <server name="PULSE_ENABLED" value="false"/>
         <server name="TELESCOPE_ENABLED" value="false"/>

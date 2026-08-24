@@ -11,6 +11,47 @@ class AuthenticationTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_new_user_receives_the_default_test_payment_account(): void
+    {
+        config()->set('services.paystack.default_recipient', 'RCP_shared_test_recipient');
+
+        $this->postJson('/signup', [
+            'username' => 'default-recipient-user',
+            'email' => 'recipient@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ])->assertCreated();
+
+        $user = User::query()->where('email', 'recipient@example.com')->firstOrFail();
+
+        $this->assertDatabaseHas('payment_accounts', [
+            'user_id' => $user->id,
+            'provider' => 'paystack',
+            'recipient_reference' => 'RCP_shared_test_recipient',
+            'status' => 'active',
+        ]);
+    }
+
+    public function test_existing_user_receives_the_default_test_payment_account_on_login(): void
+    {
+        config()->set('services.paystack.default_recipient', 'RCP_shared_test_recipient');
+        $user = User::factory()->create([
+            'password' => 'password',
+        ]);
+
+        $this->postJson('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ])->assertOk();
+
+        $this->assertDatabaseHas('payment_accounts', [
+            'user_id' => $user->id,
+            'provider' => 'paystack',
+            'recipient_reference' => 'RCP_shared_test_recipient',
+            'status' => 'active',
+        ]);
+    }
+
     public function test_user_can_sign_up_and_receive_a_token(): void
     {
         $response = $this->postJson('/signup', [

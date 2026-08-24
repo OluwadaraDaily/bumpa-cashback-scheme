@@ -28,6 +28,8 @@ Laravel application for purchasing products, unlocking achievements and badges, 
 - Achievement notifications are stored in the database so users can see them after queued processing finishes.
 - A badge requires all of its linked achievements.
 - Payment accounts store only a provider recipient reference. Bank details are not stored by this application.
+- A shared test recipient can be assigned automatically until a user replaces it with their own recipient reference.
+- Activating or updating an account retries the user's pending or failed cashbacks.
 - Cashback transfers are queued and remain `processing` until the provider webhook confirms the final result.
 - The default payment provider is fake so local work cannot accidentally send real money.
 
@@ -193,11 +195,16 @@ curl -X PUT http://localhost:8000/payment-accounts/paystack \
 
 The current application stores the recipient reference only. The recipient must already exist with the payment provider.
 
+For local development, `PAYSTACK_DEFAULT_RECIPIENT` is assigned to new users automatically. Existing users receive it on their next login or when they earn cashback without an account. It never replaces an account the user has already saved. The placeholder in `.env.example` works with the fake provider; replace it with a recipient created in Paystack test mode when testing the real Paystack API.
+
+When a user saves a replacement account, pending or previously failed cashback is attached to the active account and queued again.
+
 For real Paystack transfers, update `.env`:
 
 ```env
 PAYMENT_PROVIDER=paystack
 PAYSTACK_SECRET_KEY=your_secret_key
+PAYSTACK_DEFAULT_RECIPIENT=RCP_your_test_recipient
 PAYSTACK_BASE_URL=https://api.paystack.co
 PAYSTACK_TIMEOUT=10
 PAYSTACK_WEBHOOK_IPS=52.31.139.75,52.49.173.169,52.214.14.220

@@ -6,6 +6,7 @@ use App\Events\AchievementsEvaluated;
 use App\Events\AchievementUnlocked;
 use App\Events\BadgeUnlocked;
 use App\Events\CashbackCreated;
+use App\Events\CashbackTransferRequested;
 use App\Events\OrderCompleted;
 use App\Listeners\CreateCashback;
 use App\Listeners\EvaluateAchievements;
@@ -24,5 +25,6 @@ class EventServiceProvider extends ServiceProvider
         Event::listen(AchievementsEvaluated::class, EvaluateBadges::class);
         Event::listen(BadgeUnlocked::class, CreateCashback::class);
         Event::listen(CashbackCreated::class, TransferCashback::class);
+        Event::listen(CashbackTransferRequested::class, TransferCashback::class);
     }
 }

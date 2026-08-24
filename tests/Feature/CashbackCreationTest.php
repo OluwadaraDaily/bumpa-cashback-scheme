@@ -57,6 +57,21 @@ class CashbackCreationTest extends TestCase
         $this->assertSame(CashbackStatus::PENDING, $cashback->status);
     }
 
+    public function test_existing_user_receives_the_default_account_when_cashback_is_created(): void
+    {
+        config()->set('services.paystack.default_recipient', 'RCP_shared_test_recipient');
+        $this->seed([AchievementSeeder::class, BadgeSeeder::class]);
+        Event::fake([CashbackCreated::class]);
+        $user = User::factory()->create();
+
+        $cashback = app(CashbackCreator::class)->createForBadge($user, 'Starter');
+        $account = $user->paymentAccounts()->sole();
+
+        $this->assertSame('RCP_shared_test_recipient', $account->recipient_reference);
+        $this->assertTrue($account->metadata['is_default']);
+        $this->assertSame($account->id, $cashback->payment_account_id);
+    }
+
     public function test_the_same_badge_cannot_create_two_cashbacks_for_one_user(): void
     {
         $this->seed([AchievementSeeder::class, BadgeSeeder::class]);

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\User;
+use App\Services\PaymentAccountService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -15,8 +16,10 @@ use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
 {
-    public function register(RegisterRequest $request): JsonResponse
-    {
+    public function register(
+        RegisterRequest $request,
+        PaymentAccountService $accounts,
+    ): JsonResponse {
         $data = $request->validated();
 
         $user = User::create([
@@ -25,12 +28,15 @@ class AuthController extends Controller
             'email' => $data['email'],
             'password' => $data['password'],
         ]);
+        $accounts->assignDefault($user);
 
         return $this->tokenResponse($user, Response::HTTP_CREATED);
     }
 
-    public function login(LoginRequest $request): JsonResponse
-    {
+    public function login(
+        LoginRequest $request,
+        PaymentAccountService $accounts,
+    ): JsonResponse {
         $data = $request->validated();
         $user = User::where('email', $data['email'])->first();
 
@@ -39,6 +45,8 @@ class AuthController extends Controller
                 'email' => ['The provided credentials are incorrect.'],
             ]);
         }
+
+        $accounts->assignDefault($user);
 
         return $this->tokenResponse($user);
     }

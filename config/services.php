@@ -8,6 +8,7 @@ return [
 
     'paystack' => [
         'secret_key' => env('PAYSTACK_SECRET_KEY'),
+        'default_recipient' => env('PAYSTACK_DEFAULT_RECIPIENT'),
         'base_url' => env('PAYSTACK_BASE_URL', 'https://api.paystack.co'),
         'timeout' => (int) env('PAYSTACK_TIMEOUT', 10),
         'webhook_ips' => array_values(array_filter(array_map(

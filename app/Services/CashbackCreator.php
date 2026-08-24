@@ -20,8 +20,12 @@ class CashbackCreator
 
     public const PROVIDER = 'paystack';
 
+    public function __construct(private readonly PaymentAccountService $paymentAccounts) {}
+
     public function createForBadge(User $user, string $badgeName): Cashback
     {
+        $this->paymentAccounts->assignDefault($user);
+
         $result = DB::transaction(function () use ($user, $badgeName): array {
             $badge = Badge::query()->where('name', $badgeName)->firstOrFail();
             $existing = Cashback::query()
