@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Events\AchievementUnlocked;
+use App\Events\AchievementsEvaluated;
 use App\Events\BadgeUnlocked;
 use App\Events\CashbackCreated;
 use App\Events\OrderCompleted;
@@ -18,7 +18,7 @@ class EventServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Event::listen(OrderCompleted::class, EvaluateAchievements::class);
-        Event::listen(AchievementUnlocked::class, EvaluateBadges::class);
+        Event::listen(AchievementsEvaluated::class, EvaluateBadges::class);
         Event::listen(BadgeUnlocked::class, CreateCashback::class);
         Event::listen(CashbackCreated::class, TransferCashback::class);
     }

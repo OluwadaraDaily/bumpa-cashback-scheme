@@ -35,10 +35,13 @@ Route::post('/web/logout', [AuthController::class, 'logout'])
 
 Route::middleware('auth')->group(function (): void {
     Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements.index');
-    Route::get('/cashbacks', [CashbackController::class, 'index'])->name('cashbacks.index');
-    Route::get('/cashbacks/{cashback}', [CashbackController::class, 'show'])->name('cashbacks.show');
-    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
-    Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+
+    Route::prefix('account')->group(function (): void {
+        Route::get('/cashbacks', [CashbackController::class, 'index'])->name('cashbacks.index');
+        Route::get('/cashbacks/{cashback}', [CashbackController::class, 'show'])->name('cashbacks.show');
+        Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+        Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+    });
 
     Route::get('/checkout', [CheckoutController::class, 'show'])->name('checkout.show');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');

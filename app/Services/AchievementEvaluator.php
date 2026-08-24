@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\AchievementMetric;
+use App\Events\AchievementsEvaluated;
 use App\Events\AchievementUnlocked;
 use App\Models\Achievement;
 use App\Models\Order;
@@ -59,18 +60,25 @@ class AchievementEvaluator
                     'name' => $achievement->name,
                 ];
 
-                AchievementUnlocked::dispatch($achievement->name, $lockedUser);
             }
 
             return $unlockedAchievements;
         });
 
         foreach ($unlockedAchievements as $achievement) {
+            AchievementUnlocked::dispatch($achievement['name'], $user);
+
             Log::info('Achievement unlocked', [
                 'achievement_id' => $achievement['id'],
                 'achievement_name' => $achievement['name'],
                 'user_id' => $user->id,
             ]);
         }
+
+        AchievementsEvaluated::dispatch($user);
+        Log::info('Achievements evaluated', [
+            'user_id' => $user->id,
+            'unlocked_count' => count($unlockedAchievements),
+        ]);
     }
 }

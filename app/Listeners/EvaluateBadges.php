@@ -2,7 +2,7 @@
 
 namespace App\Listeners;
 
-use App\Events\AchievementUnlocked;
+use App\Events\AchievementsEvaluated;
 use App\Services\BadgeEvaluator;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
@@ -17,7 +17,7 @@ class EvaluateBadges implements ShouldQueue
      */
     public array $backoff = [5, 30, 120];
 
-    public function handle(AchievementUnlocked $event): void
+    public function handle(AchievementsEvaluated $event): void
     {
         $this->evaluator->evaluate($event->user);
     }
