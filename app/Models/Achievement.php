@@ -35,4 +35,9 @@ class Achievement extends Model
     {
         return $this->hasMany(UserAchievement::class);
     }
+
+    public function badges(): BelongsToMany
+    {
+        return $this->belongsToMany(Badge::class, 'badge_achievements');
+    }
 }
