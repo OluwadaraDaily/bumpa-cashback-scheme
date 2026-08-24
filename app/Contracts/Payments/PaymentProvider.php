@@ -7,5 +7,7 @@ use App\Data\Payments\PaymentTransferResult;
 
 interface PaymentProvider
 {
+    public function name(): string;
+
     public function transfer(PaymentTransferRequest $request): PaymentTransferResult;
 }

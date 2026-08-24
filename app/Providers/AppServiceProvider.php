@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Contracts\Payments\PaymentProvider;
+use App\Services\Payments\FakePaymentProvider;
+use App\Services\Payments\PaystackPaymentProvider;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -15,7 +18,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(PaymentProvider::class, function (): PaymentProvider {
+            return config('services.payment.provider') === 'paystack'
+                ? new PaystackPaymentProvider
+                : new FakePaymentProvider;
+        });
     }
 
     /**

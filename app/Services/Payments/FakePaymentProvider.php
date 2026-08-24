@@ -20,6 +20,11 @@ class FakePaymentProvider implements PaymentProvider
 
     private string $failureMessage = 'The fake provider rejected the transfer.';
 
+    public function name(): string
+    {
+        return 'fake';
+    }
+
     public function transfer(PaymentTransferRequest $request): PaymentTransferResult
     {
         $this->transfers[] = $request;

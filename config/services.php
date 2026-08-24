@@ -2,6 +2,16 @@
 
 return [
 
+    'payment' => [
+        'provider' => env('PAYMENT_PROVIDER', 'fake'),
+    ],
+
+    'paystack' => [
+        'secret_key' => env('PAYSTACK_SECRET_KEY'),
+        'base_url' => env('PAYSTACK_BASE_URL', 'https://api.paystack.co'),
+        'timeout' => (int) env('PAYSTACK_TIMEOUT', 10),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services
