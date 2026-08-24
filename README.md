@@ -284,4 +284,4 @@ Run the code-style check:
 vendor/bin/pint --test
 ```
 
-The tests cover authentication, product creation, stock handling, order idempotency, achievement and badge rules, cashback creation, payment transfers, webhook security, and payment account ownership.
+The tests cover authentication, product creation, stock handling, order idempotency, the full order-to-cashback journey, achievement and badge rules, payment transfers, webhook security, and payment account ownership.
