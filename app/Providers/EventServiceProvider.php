@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Events\AchievementUnlocked;
+use App\Events\BadgeUnlocked;
 use App\Events\OrderCompleted;
+use App\Listeners\CreateCashback;
 use App\Listeners\EvaluateAchievements;
 use App\Listeners\EvaluateBadges;
 use Illuminate\Support\Facades\Event;
@@ -15,5 +17,6 @@ class EventServiceProvider extends ServiceProvider
     {
         Event::listen(OrderCompleted::class, EvaluateAchievements::class);
         Event::listen(AchievementUnlocked::class, EvaluateBadges::class);
+        Event::listen(BadgeUnlocked::class, CreateCashback::class);
     }
 }
