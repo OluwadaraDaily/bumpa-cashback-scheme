@@ -64,6 +64,22 @@ class OutboxRelay
         return $published === 1;
     }
 
+    public function publishSafely(OutboxMessage $message): bool
+    {
+        try {
+            return $this->publish($message);
+        } catch (Throwable $exception) {
+            Log::warning('Immediate outbox event publish failed; scheduler will retry', [
+                'outbox_message_id' => $message->id,
+                'event_type' => $message->event_type->value,
+                'aggregate_id' => $message->aggregate_id,
+                'exception' => $exception::class,
+            ]);
+
+            return false;
+        }
+    }
+
     /**
      * @return array{published: int, failed: int}
      */

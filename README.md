@@ -24,7 +24,7 @@ Laravel application for purchasing products, unlocking achievements and badges, 
 - All money is stored as integer kobo. For example, ₦300 is stored as `30000`.
 - Orders support multiple products and store the product name and price at the time of purchase.
 - `Idempotency-Key` is required when creating an order to prevent duplicate orders on retries.
-- Completed orders and their events are committed together in a transactional outbox. Failed queue publishing is retried by the scheduler.
+- Orders, achievements, badges, and cashbacks are committed with their events in a transactional outbox. Failed queue publishing is retried by the scheduler.
 - Achievements and badges are seeded and evaluated using database records.
 - Achievement notifications are stored in the database so users can see them after queued processing finishes.
 - A badge requires all of its linked achievements.

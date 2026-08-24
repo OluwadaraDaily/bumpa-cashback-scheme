@@ -19,6 +19,9 @@ class EvaluateAchievements implements ShouldQueue
 
     public function handle(OrderCompleted $event): void
     {
-        $this->evaluator->evaluate($event->order->user);
+        $this->evaluator->evaluate(
+            $event->order->user,
+            "order:{$event->order->id}",
+        );
     }
 }

@@ -12,7 +12,6 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
-use Throwable;
 
 class OrderService
 {
@@ -122,15 +121,7 @@ class OrderService
     {
         $outboxMessage = $this->outbox->recordOrderCompleted($result->order);
 
-        try {
-            $this->outboxRelay->publish($outboxMessage);
-        } catch (Throwable $exception) {
-            Log::warning('Immediate order event publish failed; outbox will retry', [
-                'order_id' => $result->order->id,
-                'outbox_message_id' => $outboxMessage->id,
-                'exception' => $exception::class,
-            ]);
-        }
+        $this->outboxRelay->publishSafely($outboxMessage);
 
         if (! $result->replayed) {
             Log::info('Order completed', [

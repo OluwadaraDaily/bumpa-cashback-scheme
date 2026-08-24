@@ -4,11 +4,12 @@ namespace App\Services;
 
 use App\Enums\CashbackStatus;
 use App\Enums\PaymentAccountStatus;
-use App\Events\CashbackCreated;
 use App\Models\Badge;
 use App\Models\Cashback;
 use App\Models\PaymentAccount;
 use App\Models\User;
+use App\Services\Outbox\OutboxRecorder;
+use App\Services\Outbox\OutboxRelay;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -20,7 +21,11 @@ class CashbackCreator
 
     public const PROVIDER = 'paystack';
 
-    public function __construct(private readonly PaymentAccountService $paymentAccounts) {}
+    public function __construct(
+        private readonly PaymentAccountService $paymentAccounts,
+        private readonly OutboxRecorder $outbox,
+        private readonly OutboxRelay $outboxRelay,
+    ) {}
 
     public function createForBadge(User $user, string $badgeName): Cashback
     {
@@ -38,6 +43,7 @@ class CashbackCreator
                 return [
                     'cashback' => $existing,
                     'created' => false,
+                    'outbox_message' => $this->outbox->recordCashbackCreated($existing),
                 ];
             }
 
@@ -60,16 +66,16 @@ class CashbackCreator
                 ],
             ]);
 
-            CashbackCreated::dispatch($cashback);
-
             return [
                 'cashback' => $cashback,
                 'created' => true,
+                'outbox_message' => $this->outbox->recordCashbackCreated($cashback),
             ];
         });
 
         /** @var Cashback $cashback */
         $cashback = $result['cashback'];
+        $this->outboxRelay->publishSafely($result['outbox_message']);
 
         if ($result['created']) {
             Log::info('Cashback created', [

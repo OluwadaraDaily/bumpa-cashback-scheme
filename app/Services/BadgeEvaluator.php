@@ -2,19 +2,26 @@
 
 namespace App\Services;
 
-use App\Events\BadgeUnlocked;
 use App\Models\Badge;
 use App\Models\User;
+use App\Services\Outbox\OutboxRecorder;
+use App\Services\Outbox\OutboxRelay;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class BadgeEvaluator
 {
+    public function __construct(
+        private readonly OutboxRecorder $outbox,
+        private readonly OutboxRelay $outboxRelay,
+    ) {}
+
     public function evaluate(User $user): void
     {
-        $unlockedBadges = DB::transaction(function () use ($user): array {
+        $result = DB::transaction(function () use ($user): array {
             $lockedUser = User::query()->lockForUpdate()->findOrFail($user->id);
             $unlockedBadges = [];
+            $outboxMessages = [];
             $unlockedAchievementIds = $lockedUser->userAchievements()
                 ->pluck('achievement_id')
                 ->map(fn ($id): int => (int) $id)
@@ -52,14 +59,20 @@ class BadgeEvaluator
                     'id' => $badge->id,
                     'name' => $badge->name,
                 ];
-
-                BadgeUnlocked::dispatch($badge->name, $lockedUser);
+                $outboxMessages[] = $this->outbox->recordBadgeUnlocked($lockedUser, $badge);
             }
 
-            return $unlockedBadges;
+            return [
+                'unlocked_badges' => $unlockedBadges,
+                'outbox_messages' => $outboxMessages,
+            ];
         });
 
-        foreach ($unlockedBadges as $badge) {
+        foreach ($result['outbox_messages'] as $outboxMessage) {
+            $this->outboxRelay->publishSafely($outboxMessage);
+        }
+
+        foreach ($result['unlocked_badges'] as $badge) {
             Log::info('Badge unlocked', [
                 'badge_id' => $badge['id'],
                 'badge_name' => $badge['name'],

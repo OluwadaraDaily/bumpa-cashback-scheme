@@ -3,21 +3,30 @@
 namespace App\Services;
 
 use App\Enums\AchievementMetric;
-use App\Events\AchievementsEvaluated;
-use App\Events\AchievementUnlocked;
 use App\Models\Achievement;
 use App\Models\Order;
 use App\Models\User;
+use App\Services\Outbox\OutboxRecorder;
+use App\Services\Outbox\OutboxRelay;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class AchievementEvaluator
 {
-    public function evaluate(User $user): void
+    public function __construct(
+        private readonly OutboxRecorder $outbox,
+        private readonly OutboxRelay $outboxRelay,
+    ) {}
+
+    public function evaluate(User $user, ?string $evaluationKey = null): void
     {
-        $unlockedAchievements = DB::transaction(function () use ($user): array {
+        $evaluationKey ??= 'manual:'.Str::uuid();
+
+        $result = DB::transaction(function () use ($user, $evaluationKey): array {
             $lockedUser = User::query()->lockForUpdate()->findOrFail($user->id);
             $unlockedAchievements = [];
+            $outboxMessages = [];
             $metrics = [
                 AchievementMetric::PURCHASE_COUNT->value => Order::query()
                     ->where('user_id', $lockedUser->id)
@@ -59,15 +68,25 @@ class AchievementEvaluator
                     'id' => $achievement->id,
                     'name' => $achievement->name,
                 ];
-
+                $outboxMessages[] = $this->outbox->recordAchievementUnlocked($lockedUser, $achievement);
             }
 
-            return $unlockedAchievements;
+            $outboxMessages[] = $this->outbox->recordAchievementsEvaluated(
+                $lockedUser,
+                $evaluationKey,
+            );
+
+            return [
+                'unlocked_achievements' => $unlockedAchievements,
+                'outbox_messages' => $outboxMessages,
+            ];
         });
 
-        foreach ($unlockedAchievements as $achievement) {
-            AchievementUnlocked::dispatch($achievement['name'], $user);
+        foreach ($result['outbox_messages'] as $outboxMessage) {
+            $this->outboxRelay->publishSafely($outboxMessage);
+        }
 
+        foreach ($result['unlocked_achievements'] as $achievement) {
             Log::info('Achievement unlocked', [
                 'achievement_id' => $achievement['id'],
                 'achievement_name' => $achievement['name'],
@@ -75,10 +94,9 @@ class AchievementEvaluator
             ]);
         }
 
-        AchievementsEvaluated::dispatch($user);
         Log::info('Achievements evaluated', [
             'user_id' => $user->id,
-            'unlocked_count' => count($unlockedAchievements),
+            'unlocked_count' => count($result['unlocked_achievements']),
         ]);
     }
 }
