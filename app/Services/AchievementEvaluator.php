@@ -8,13 +8,15 @@ use App\Models\Achievement;
 use App\Models\Order;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AchievementEvaluator
 {
     public function evaluate(User $user): void
     {
-        DB::transaction(function () use ($user): void {
+        $unlockedAchievements = DB::transaction(function () use ($user): array {
             $lockedUser = User::query()->lockForUpdate()->findOrFail($user->id);
+            $unlockedAchievements = [];
             $metrics = [
                 AchievementMetric::PURCHASE_COUNT->value => Order::query()
                     ->where('user_id', $lockedUser->id)
@@ -52,9 +54,23 @@ class AchievementEvaluator
                     'unlocked_at' => now(),
                 ]);
                 $unlockedAchievementIds[] = $achievement->id;
+                $unlockedAchievements[] = [
+                    'id' => $achievement->id,
+                    'name' => $achievement->name,
+                ];
 
                 AchievementUnlocked::dispatch($achievement->name, $lockedUser);
             }
+
+            return $unlockedAchievements;
         });
+
+        foreach ($unlockedAchievements as $achievement) {
+            Log::info('Achievement unlocked', [
+                'achievement_id' => $achievement['id'],
+                'achievement_name' => $achievement['name'],
+                'user_id' => $user->id,
+            ]);
+        }
     }
 }

@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class OrderService
@@ -108,6 +109,17 @@ class OrderService
 
         if (! $result->replayed) {
             OrderCompleted::dispatch($result->order);
+            Log::info('Order completed', [
+                'order_id' => $result->order->id,
+                'user_id' => $result->order->user_id,
+                'total' => $result->order->total,
+                'item_count' => $result->order->items->count(),
+            ]);
+        } else {
+            Log::info('Order request replayed', [
+                'order_id' => $result->order->id,
+                'user_id' => $result->order->user_id,
+            ]);
         }
 
         return $result;

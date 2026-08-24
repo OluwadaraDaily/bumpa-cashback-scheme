@@ -7,9 +7,11 @@ use App\Data\Payments\PaymentTransferRequest;
 use App\Enums\CashbackStatus;
 use App\Enums\PaymentAccountStatus;
 use App\Enums\PaymentAttemptStatus;
+use App\Exceptions\PaymentProviderException;
 use App\Models\Cashback;
 use App\Models\PaymentAttempt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class CashbackTransferService
 {
@@ -24,7 +26,7 @@ class CashbackTransferService
                 ->findOrFail($cashback->id);
 
             if ($cashback->status === CashbackStatus::PAID) {
-                return null;
+                return ['skip_reason' => 'already_paid'];
             }
 
             $attempt = $cashback->paymentAttempts()
@@ -36,7 +38,11 @@ class CashbackTransferService
                 $paymentAccount = $cashback->paymentAccount;
 
                 if (! $paymentAccount || $paymentAccount->status !== PaymentAccountStatus::ACTIVE) {
-                    return null;
+                    return [
+                        'skip_reason' => 'missing_active_payment_account',
+                        'cashback_id' => $cashback->id,
+                        'user_id' => $cashback->user_id,
+                    ];
                 }
 
                 $attemptNumber = $cashback->paymentAttempts()->count() + 1;
@@ -68,6 +74,8 @@ class CashbackTransferService
             return [
                 'cashback_id' => $cashback->id,
                 'attempt_id' => $attempt->id,
+                'user_id' => $cashback->user_id,
+                'provider' => $this->provider->name(),
                 'request' => new PaymentTransferRequest(
                     recipientReference: $payload['recipient_reference'],
                     amount: (int) $payload['amount'],
@@ -82,7 +90,38 @@ class CashbackTransferService
             return;
         }
 
-        $result = $this->provider->transfer($transfer['request']);
+        if (isset($transfer['skip_reason'])) {
+            if ($transfer['skip_reason'] === 'missing_active_payment_account') {
+                Log::notice('Cashback transfer waiting for payment account', [
+                    'cashback_id' => $transfer['cashback_id'],
+                    'user_id' => $transfer['user_id'],
+                ]);
+            }
+
+            return;
+        }
+
+        Log::info('Cashback transfer started', [
+            'cashback_id' => $transfer['cashback_id'],
+            'payment_attempt_id' => $transfer['attempt_id'],
+            'user_id' => $transfer['user_id'],
+            'provider' => $transfer['provider'],
+            'amount' => $transfer['request']->amount,
+            'currency' => $transfer['request']->currency,
+        ]);
+
+        try {
+            $result = $this->provider->transfer($transfer['request']);
+        } catch (PaymentProviderException $exception) {
+            Log::warning('Cashback transfer provider error', [
+                'cashback_id' => $transfer['cashback_id'],
+                'payment_attempt_id' => $transfer['attempt_id'],
+                'provider' => $transfer['provider'],
+                'exception' => $exception::class,
+            ]);
+
+            throw $exception;
+        }
 
         DB::transaction(function () use ($transfer, $result): void {
             $attempt = PaymentAttempt::query()->lockForUpdate()->findOrFail($transfer['attempt_id']);
@@ -108,5 +147,21 @@ class CashbackTransferService
             ]);
             $cashback->update(['status' => CashbackStatus::FAILED]);
         });
+
+        if ($result->successful) {
+            Log::info('Cashback transfer accepted', [
+                'cashback_id' => $transfer['cashback_id'],
+                'payment_attempt_id' => $transfer['attempt_id'],
+                'provider' => $transfer['provider'],
+                'provider_transfer_reference' => $result->providerReference,
+            ]);
+        } else {
+            Log::warning('Cashback transfer failed', [
+                'cashback_id' => $transfer['cashback_id'],
+                'payment_attempt_id' => $transfer['attempt_id'],
+                'provider' => $transfer['provider'],
+                'failure_code' => $result->failureCode,
+            ]);
+        }
     }
 }

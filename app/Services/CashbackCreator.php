@@ -10,6 +10,7 @@ use App\Models\Cashback;
 use App\Models\PaymentAccount;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class CashbackCreator
 {
@@ -21,7 +22,7 @@ class CashbackCreator
 
     public function createForBadge(User $user, string $badgeName): Cashback
     {
-        return DB::transaction(function () use ($user, $badgeName): Cashback {
+        $result = DB::transaction(function () use ($user, $badgeName): array {
             $badge = Badge::query()->where('name', $badgeName)->firstOrFail();
             $existing = Cashback::query()
                 ->where('user_id', $user->id)
@@ -30,7 +31,10 @@ class CashbackCreator
                 ->first();
 
             if ($existing) {
-                return $existing;
+                return [
+                    'cashback' => $existing,
+                    'created' => false,
+                ];
             }
 
             $paymentAccount = PaymentAccount::query()
@@ -54,7 +58,26 @@ class CashbackCreator
 
             CashbackCreated::dispatch($cashback);
 
-            return $cashback;
+            return [
+                'cashback' => $cashback,
+                'created' => true,
+            ];
         });
+
+        /** @var Cashback $cashback */
+        $cashback = $result['cashback'];
+
+        if ($result['created']) {
+            Log::info('Cashback created', [
+                'cashback_id' => $cashback->id,
+                'badge_id' => $cashback->badge_id,
+                'user_id' => $cashback->user_id,
+                'amount' => $cashback->amount,
+                'currency' => $cashback->currency,
+                'payment_account_id' => $cashback->payment_account_id,
+            ]);
+        }
+
+        return $cashback;
     }
 }
