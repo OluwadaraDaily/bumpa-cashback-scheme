@@ -17,23 +17,16 @@ Laravel application for purchasing products, unlocking achievements and badges, 
 
 ## Design choices
 
-- Laravel is used as a modular monolith. This keeps deployment simple while allowing the code to be split into clear services.
-- Domain actions communicate through events and queued listeners.
-- MySQL stores application data. Redis stores queues and cache data.
-- Laravel Sanctum provides bearer-token authentication.
-- All money is stored as integer kobo. For example, ₦300 is stored as `30000`.
-- Orders support multiple products and store the product name and price at the time of purchase.
-- `Idempotency-Key` is required when creating an order to prevent duplicate orders on retries.
-- Orders, achievements, badges, and cashbacks are committed with their events in a transactional outbox. Failed queue publishing is retried by the scheduler.
-- Achievements and badges are seeded and evaluated using database records.
-- Achievement notifications are stored in the database so users can see them after queued processing finishes.
-- A badge requires all of its linked achievements.
-- Payment accounts store only a provider recipient reference. Bank details are not stored by this application.
-- A shared test recipient can be assigned automatically until a user replaces it with their own recipient reference.
-- Activating or updating an account retries the user's pending or failed cashbacks.
-- Cashback transfers are queued and remain `processing` until the provider webhook confirms the final result.
-- Temporary provider exceptions are retried with the same transfer reference. Exhausted retries mark the cashback as `failed` so it can be retried safely later.
-- The default payment provider is fake so local work cannot accidentally send real money.
+1. **Laravel modular monolith:** The application is deployed as one Laravel project but separated into controllers, services, events, listeners, and payment adapters. This avoids unnecessary microservice complexity while keeping responsibilities clear.
+2. **Event-driven reward flow:** Order completion, achievements, badges, cashback creation, and transfers communicate through events and queued listeners.
+3. **Transactional outbox:** Important events are saved in the same database transaction as the related business change. If the queue is unavailable, the scheduler publishes them later.
+4. **Explicit listener registration:** Automatic listener discovery is disabled. Every event and listener relationship is registered explicitly to make the flow clear and prevent duplicate listener execution.
+5. **Idempotent operations:** Orders require an `Idempotency-Key`. Database constraints and idempotent handlers also protect achievements, badges, cashbacks, notifications, and payment attempts from duplicate processing.
+6. **Database-driven reward rules:** Achievement definitions and badge requirements are stored in the database and seeded. New rules can be added without changing the main reward workflow.
+7. **Many-to-many badge requirements:** A badge can require several achievements, and an achievement can contribute to several badges. A user must unlock every required achievement before receiving the badge.
+8. **Separate payment accounts and attempts:** Provider recipient details are stored in `payment_accounts`. Every cashback transfer attempt is recorded separately for auditing, failure tracking, and safe retries.
+9. **Asynchronous Paystack confirmation:** Cashback remains `processing` until a signed Paystack webhook confirms success, failure, or reversal. Temporary transfer retries reuse the same provider reference.
+10. **Atomic writes and controlled retries:** Stock reduction, order creation, and outbox recording happen in one database transaction. Row locks, unique constraints, queued retries, and backoff protect important operations.
 
 ## Requirements
 
