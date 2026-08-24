@@ -15,6 +15,8 @@ Laravel application for purchasing products, unlocking achievements and badges, 
 9. Paystack sends a webhook when the transfer finishes.
 10. The webhook marks the cashback as `paid` or `failed`.
 
+See the [architecture and user journey diagram](docs/ARCHITECTURE.md) for the complete service flow.
+
 ## Design choices
 
 1. **Laravel modular monolith:** The application is deployed as one Laravel project but separated into controllers, services, events, listeners, and payment adapters. This avoids unnecessary microservice complexity while keeping responsibilities clear.
