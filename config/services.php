@@ -10,6 +10,10 @@ return [
         'secret_key' => env('PAYSTACK_SECRET_KEY'),
         'base_url' => env('PAYSTACK_BASE_URL', 'https://api.paystack.co'),
         'timeout' => (int) env('PAYSTACK_TIMEOUT', 10),
+        'webhook_ips' => array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('PAYSTACK_WEBHOOK_IPS', '')),
+        ))),
     ],
 
     /*
