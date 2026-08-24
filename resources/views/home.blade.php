@@ -8,6 +8,9 @@
             <p class="hero-copy">
                 Your shopping and rewards journey will appear here as we add the next screens.
             </p>
+            <div class="hero-actions">
+                <a class="button" href="{{ route('shop') }}">Browse products</a>
+            </div>
             <p class="session-note">Authentication is now connected to Laravel sessions.</p>
         @else
             <p class="eyebrow">Shop. Achieve. Get rewarded.</p>
@@ -19,6 +22,7 @@
                 <a class="button" href="{{ route('signup') }}">Create an account</a>
                 <a class="button button-secondary" href="{{ route('login') }}">Log in</a>
             </div>
+            <p class="session-note"><a href="{{ route('shop') }}">Browse the product catalogue first</a></p>
         @endauth
     </section>
 @endsection

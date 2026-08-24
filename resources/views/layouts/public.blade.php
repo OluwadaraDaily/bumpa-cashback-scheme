@@ -10,6 +10,7 @@
     <header class="site-header">
         <a class="brand" href="{{ route('home') }}">Bumpa Cashback</a>
         <nav class="site-nav">
+            <a href="{{ route('shop') }}">Shop</a>
             @auth
                 <span class="nav-user">Hi, {{ auth()->user()->username }}</span>
                 <form action="{{ route('web.logout') }}" method="POST">

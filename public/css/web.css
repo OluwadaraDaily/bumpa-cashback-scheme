@@ -247,6 +247,125 @@ input:focus {
     text-align: center;
 }
 
+.section-heading {
+    align-items: end;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 32px;
+}
+
+.section-heading h1 {
+    font-size: clamp(2rem, 5vw, 3.4rem);
+    letter-spacing: -0.04em;
+    margin: 8px 0 12px;
+}
+
+.section-heading p:not(.eyebrow) {
+    color: var(--muted);
+    margin: 0;
+}
+
+.count-pill,
+.product-stock {
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    padding: 8px 12px;
+    white-space: nowrap;
+}
+
+.count-pill {
+    background: #ccfbf1;
+    color: var(--primary-dark);
+}
+
+.product-grid {
+    display: grid;
+    gap: 18px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.product-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    display: flex;
+    flex-direction: column;
+    min-height: 270px;
+    padding: 18px;
+    transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.product-card:hover {
+    border-color: #99f6e4;
+    box-shadow: 0 14px 30px rgba(15, 118, 110, 0.1);
+    transform: translateY(-3px);
+}
+
+.product-mark {
+    align-items: center;
+    background: #fef3c7;
+    border-radius: 14px;
+    color: #92400e;
+    display: flex;
+    font-size: 2rem;
+    font-weight: 900;
+    height: 92px;
+    justify-content: center;
+    margin-bottom: 20px;
+    width: 92px;
+}
+
+.product-details {
+    flex: 1;
+}
+
+.product-label {
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    margin: 0 0 7px;
+    text-transform: uppercase;
+}
+
+.product-card h2 {
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.product-price {
+    color: var(--primary-dark);
+    font-size: 1.25rem;
+    font-weight: 900;
+    margin: 10px 0 0;
+}
+
+.stock-available {
+    align-self: flex-start;
+    background: #f0fdf4;
+    color: var(--success);
+}
+
+.stock-empty {
+    align-self: flex-start;
+    background: #fef2f2;
+    color: var(--danger);
+}
+
+.empty-state {
+    background: var(--surface);
+    border: 1px dashed #cbd5e1;
+    border-radius: 18px;
+    grid-column: 1 / -1;
+    padding: 48px;
+    text-align: center;
+}
+
+.empty-state p {
+    color: var(--muted);
+}
+
 @media (max-width: 600px) {
     .site-header {
         padding: 18px;
@@ -263,6 +382,16 @@ input:focus {
     .hero-card,
     .auth-card {
         padding: 32px 24px;
+    }
+
+    .section-heading {
+        align-items: start;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .product-grid {
+        grid-template-columns: 1fr;
     }
 
     .hero-actions {
