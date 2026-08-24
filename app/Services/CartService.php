@@ -17,6 +17,7 @@ class CartService
 
         $cart[$product->id] = $newQuantity;
         session()->put('cart', $cart);
+        session()->forget('checkout_key');
     }
 
     public function update(Product $product, int $quantity): void
@@ -30,6 +31,7 @@ class CartService
         $cart = $this->cart();
         $cart[$product->id] = $quantity;
         session()->put('cart', $cart);
+        session()->forget('checkout_key');
     }
 
     public function remove(Product $product): void
@@ -37,6 +39,12 @@ class CartService
         $cart = $this->cart();
         unset($cart[$product->id]);
         session()->put('cart', $cart);
+        session()->forget('checkout_key');
+    }
+
+    public function clear(): void
+    {
+        session()->forget(['cart', 'checkout_key']);
     }
 
     /**

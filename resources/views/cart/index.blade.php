@@ -66,7 +66,12 @@
                     <span>Total</span>
                     <strong>₦{{ number_format($total / 100, 2) }}</strong>
                 </div>
-                <p class="summary-note">Checkout will be connected in the next step.</p>
+                <p class="summary-note">Your stock will be checked again at checkout.</p>
+                @auth
+                    <a class="button button-full" href="{{ route('checkout.show') }}">Proceed to checkout</a>
+                @else
+                    <a class="button button-full" href="{{ route('login') }}">Log in to checkout</a>
+                @endauth
             </aside>
         </section>
     @endif
