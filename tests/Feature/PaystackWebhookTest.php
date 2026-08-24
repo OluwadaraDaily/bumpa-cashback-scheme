@@ -73,6 +73,101 @@ class PaystackWebhookTest extends TestCase
         ]);
     }
 
+    public function test_duplicate_failed_webhook_is_safe(): void
+    {
+        $attempt = $this->paymentAttempt();
+        $payload = $this->payload('transfer.failed', $attempt);
+
+        $this->postWebhook($payload)->assertOk();
+        $completedAt = $attempt->refresh()->completed_at;
+        $this->postWebhook($payload)->assertOk();
+
+        $this->assertDatabaseCount('payment_attempts', 1);
+        $this->assertSame($completedAt?->toJSON(), $attempt->refresh()->completed_at?->toJSON());
+        $this->assertDatabaseHas('cashbacks', [
+            'id' => $attempt->cashback_id,
+            'status' => CashbackStatus::FAILED->value,
+        ]);
+    }
+
+    public function test_reversed_webhook_after_success_marks_the_cashback_as_failed(): void
+    {
+        $attempt = $this->paymentAttempt();
+
+        $this->postWebhook($this->payload('transfer.success', $attempt))->assertOk();
+        $this->postWebhook($this->payload('transfer.reversed', $attempt))->assertOk();
+
+        $this->assertDatabaseHas('payment_attempts', [
+            'id' => $attempt->id,
+            'status' => PaymentAttemptStatus::FAILED->value,
+            'failure_code' => 'transfer.reversed',
+        ]);
+        $cashback = $attempt->cashback()->sole();
+        $this->assertSame(CashbackStatus::FAILED, $cashback->status);
+        $this->assertNull($cashback->paid_at);
+    }
+
+    public function test_webhook_with_the_wrong_amount_is_ignored(): void
+    {
+        $attempt = $this->paymentAttempt();
+        $payload = $this->payload('transfer.success', $attempt);
+        $payload['data']['amount'] = $attempt->amount + 1;
+
+        $this->postWebhook($payload)->assertOk();
+
+        $this->assertSame(PaymentAttemptStatus::PROCESSING, $attempt->refresh()->status);
+        $this->assertSame(CashbackStatus::PROCESSING, $attempt->cashback()->sole()->status);
+    }
+
+    public function test_webhook_with_the_wrong_currency_is_ignored(): void
+    {
+        $attempt = $this->paymentAttempt();
+        $payload = $this->payload('transfer.success', $attempt);
+        $payload['data']['currency'] = 'USD';
+
+        $this->postWebhook($payload)->assertOk();
+
+        $this->assertSame(PaymentAttemptStatus::PROCESSING, $attempt->refresh()->status);
+        $this->assertSame(CashbackStatus::PROCESSING, $attempt->cashback()->sole()->status);
+    }
+
+    public function test_webhook_for_an_unknown_transfer_is_safely_ignored(): void
+    {
+        $attempt = $this->paymentAttempt();
+        $payload = $this->payload('transfer.success', $attempt);
+        $payload['data']['reference'] = 'unknown_cashback_reference';
+        $payload['data']['transfer_code'] = 'TRF_unknown';
+
+        $this->postWebhook($payload)->assertOk();
+
+        $this->assertSame(PaymentAttemptStatus::PROCESSING, $attempt->refresh()->status);
+        $this->assertSame(CashbackStatus::PROCESSING, $attempt->cashback()->sole()->status);
+    }
+
+    public function test_webhook_can_match_an_attempt_by_transfer_code(): void
+    {
+        $attempt = $this->paymentAttempt();
+        $attempt->update(['provider_transfer_reference' => 'TRF_webhook_test']);
+        $payload = $this->payload('transfer.success', $attempt);
+        unset($payload['data']['reference']);
+
+        $this->postWebhook($payload)->assertOk();
+
+        $this->assertSame(PaymentAttemptStatus::SUCCEEDED, $attempt->refresh()->status);
+        $this->assertSame(CashbackStatus::PAID, $attempt->cashback()->sole()->status);
+    }
+
+    public function test_unrelated_paystack_event_is_safely_ignored(): void
+    {
+        $attempt = $this->paymentAttempt();
+        $payload = $this->payload('charge.success', $attempt);
+
+        $this->postWebhook($payload)->assertOk();
+
+        $this->assertSame(PaymentAttemptStatus::PROCESSING, $attempt->refresh()->status);
+        $this->assertSame(CashbackStatus::PROCESSING, $attempt->cashback()->sole()->status);
+    }
+
     public function test_invalid_signature_is_rejected(): void
     {
         $attempt = $this->paymentAttempt();

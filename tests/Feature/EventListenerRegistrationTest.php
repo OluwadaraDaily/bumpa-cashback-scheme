@@ -13,6 +13,7 @@ use App\Listeners\EvaluateAchievements;
 use App\Listeners\EvaluateBadges;
 use App\Listeners\StoreAchievementNotification;
 use App\Listeners\TransferCashback;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as FrameworkEventServiceProvider;
 use Tests\TestCase;
@@ -45,6 +46,23 @@ class EventListenerRegistrationTest extends TestCase
                 $registeredListeners[$event] ?? [],
                 "The {$event} event must have exactly one explicit listener.",
             );
+        }
+    }
+
+    public function test_queued_reward_listeners_have_an_explicit_retry_policy(): void
+    {
+        $listeners = [
+            app(EvaluateAchievements::class),
+            app(StoreAchievementNotification::class),
+            app(EvaluateBadges::class),
+            app(CreateCashback::class),
+            app(TransferCashback::class),
+        ];
+
+        foreach ($listeners as $listener) {
+            $this->assertInstanceOf(ShouldQueue::class, $listener);
+            $this->assertSame(3, $listener->tries);
+            $this->assertSame([5, 30, 120], $listener->backoff);
         }
     }
 }

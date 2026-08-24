@@ -3,6 +3,7 @@
 namespace Tests\Unit\Payments;
 
 use App\Data\Payments\PaymentTransferRequest;
+use App\Exceptions\PaymentProviderException;
 use App\Services\Payments\PaystackPaymentProvider;
 use Illuminate\Http\Client\Request as ClientRequest;
 use Illuminate\Support\Facades\Http;
@@ -69,5 +70,57 @@ class PaystackPaymentProviderTest extends TestCase
         $this->assertFalse($result->successful);
         $this->assertSame('failed', $result->failureCode);
         $this->assertSame('Recipient is invalid.', $result->failureMessage);
+    }
+
+    public function test_it_fails_before_sending_when_the_secret_key_is_missing(): void
+    {
+        config(['services.paystack.secret_key' => '']);
+        Http::fake();
+
+        $this->expectException(PaymentProviderException::class);
+        $this->expectExceptionMessage('PAYSTACK_SECRET_KEY is not configured.');
+
+        try {
+            (new PaystackPaymentProvider)->transfer($this->transferRequest());
+        } finally {
+            Http::assertNothingSent();
+        }
+    }
+
+    public function test_it_converts_a_network_failure_to_a_retryable_provider_exception(): void
+    {
+        config(['services.paystack.secret_key' => 'sk_test_example']);
+        Http::fake([
+            'https://api.paystack.co/transfer' => Http::failedConnection('Connection timed out.'),
+        ]);
+
+        $this->expectException(PaymentProviderException::class);
+        $this->expectExceptionMessage('Paystack could not be reached.');
+
+        (new PaystackPaymentProvider)->transfer($this->transferRequest());
+    }
+
+    public function test_it_treats_a_paystack_server_error_as_retryable(): void
+    {
+        config(['services.paystack.secret_key' => 'sk_test_example']);
+        Http::fake([
+            'https://api.paystack.co/transfer' => Http::response([], 503),
+        ]);
+
+        $this->expectException(PaymentProviderException::class);
+        $this->expectExceptionMessage('Paystack returned a server error.');
+
+        (new PaystackPaymentProvider)->transfer($this->transferRequest());
+    }
+
+    private function transferRequest(): PaymentTransferRequest
+    {
+        return new PaymentTransferRequest(
+            recipientReference: 'RCP_test_recipient',
+            amount: 30_000,
+            currency: 'NGN',
+            reference: 'cashback_1_attempt_1',
+            reason: 'Starter badge cashback',
+        );
     }
 }

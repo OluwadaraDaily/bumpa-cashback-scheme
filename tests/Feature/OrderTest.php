@@ -119,6 +119,59 @@ class OrderTest extends TestCase
         $this->assertDatabaseCount('orders', 1);
     }
 
+    public function test_same_order_with_items_in_a_different_order_is_an_idempotent_replay(): void
+    {
+        Event::fake();
+        $user = User::factory()->create();
+        $firstProduct = Product::factory()->create(['quantity' => 5]);
+        $secondProduct = Product::factory()->create(['quantity' => 5]);
+
+        $first = $this->actingAs($user, 'sanctum')
+            ->withHeader('Idempotency-Key', 'order-reordered-items')
+            ->postJson('/orders', [
+                'items' => [
+                    ['product_id' => $firstProduct->id, 'quantity' => 1],
+                    ['product_id' => $secondProduct->id, 'quantity' => 2],
+                ],
+            ])
+            ->assertCreated();
+
+        $replay = $this->withHeader('Idempotency-Key', 'order-reordered-items')
+            ->postJson('/orders', [
+                'items' => [
+                    ['product_id' => $secondProduct->id, 'quantity' => 2],
+                    ['product_id' => $firstProduct->id, 'quantity' => 1],
+                ],
+            ])
+            ->assertOk();
+
+        $this->assertSame($first->json('data.id'), $replay->json('data.id'));
+        $this->assertDatabaseCount('orders', 1);
+        $this->assertDatabaseHas('products', ['id' => $firstProduct->id, 'quantity' => 4]);
+        $this->assertDatabaseHas('products', ['id' => $secondProduct->id, 'quantity' => 3]);
+    }
+
+    public function test_idempotency_keys_are_scoped_to_each_user(): void
+    {
+        Event::fake();
+        $firstUser = User::factory()->create();
+        $secondUser = User::factory()->create();
+        $product = Product::factory()->create(['quantity' => 5]);
+        $payload = ['items' => [['product_id' => $product->id, 'quantity' => 1]]];
+
+        $this->actingAs($firstUser, 'sanctum')
+            ->withHeader('Idempotency-Key', 'shared-client-key')
+            ->postJson('/orders', $payload)
+            ->assertCreated();
+        $this->actingAs($secondUser, 'sanctum')
+            ->withHeader('Idempotency-Key', 'shared-client-key')
+            ->postJson('/orders', $payload)
+            ->assertCreated();
+
+        $this->assertDatabaseCount('orders', 2);
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'quantity' => 3]);
+    }
+
     public function test_order_fails_without_enough_stock_and_does_not_reduce_stock(): void
     {
         $user = User::factory()->create();
@@ -134,6 +187,29 @@ class OrderTest extends TestCase
 
         $this->assertDatabaseCount('orders', 0);
         $this->assertDatabaseHas('products', ['id' => $product->id, 'quantity' => 1]);
+    }
+
+    public function test_a_multi_product_order_rolls_back_every_stock_change_when_one_item_is_unavailable(): void
+    {
+        $user = User::factory()->create();
+        $availableProduct = Product::factory()->create(['quantity' => 10]);
+        $unavailableProduct = Product::factory()->create(['quantity' => 1]);
+
+        $this->actingAs($user, 'sanctum')
+            ->withHeader('Idempotency-Key', 'order-atomic-stock')
+            ->postJson('/orders', [
+                'items' => [
+                    ['product_id' => $availableProduct->id, 'quantity' => 3],
+                    ['product_id' => $unavailableProduct->id, 'quantity' => 2],
+                ],
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['items']);
+
+        $this->assertDatabaseCount('orders', 0);
+        $this->assertDatabaseCount('order_items', 0);
+        $this->assertDatabaseHas('products', ['id' => $availableProduct->id, 'quantity' => 10]);
+        $this->assertDatabaseHas('products', ['id' => $unavailableProduct->id, 'quantity' => 1]);
     }
 
     public function test_user_can_only_view_their_own_orders(): void

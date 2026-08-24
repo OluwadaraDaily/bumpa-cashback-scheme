@@ -8,6 +8,7 @@ use App\Enums\PaymentAttemptStatus;
 use App\Models\Badge;
 use App\Models\Cashback;
 use App\Models\PaymentAccount;
+use App\Models\PaymentAttempt;
 use App\Models\User;
 use App\Services\PaymentAccountService;
 use Database\Seeders\AchievementSeeder;
@@ -146,7 +147,34 @@ class PaymentAccountTest extends TestCase
     {
         $this->seed([AchievementSeeder::class, BadgeSeeder::class]);
         $user = User::factory()->create();
+        $account = PaymentAccount::create([
+            'user_id' => $user->id,
+            'provider' => 'paystack',
+            'recipient_reference' => 'RCP_old_recipient',
+            'currency' => 'NGN',
+            'status' => PaymentAccountStatus::ACTIVE,
+        ]);
         $cashback = $this->cashback($user, CashbackStatus::FAILED);
+        $cashback->update(['payment_account_id' => $account->id]);
+        $failedAttempt = PaymentAttempt::create([
+            'cashback_id' => $cashback->id,
+            'payment_account_id' => $account->id,
+            'provider' => 'paystack',
+            'status' => PaymentAttemptStatus::FAILED,
+            'amount' => $cashback->amount,
+            'currency' => $cashback->currency,
+            'request_payload' => [
+                'recipient_reference' => 'RCP_old_recipient',
+                'amount' => $cashback->amount,
+                'currency' => $cashback->currency,
+                'reference' => "cashback_{$cashback->id}_attempt_1",
+                'reason' => $cashback->description,
+            ],
+            'failure_code' => 'recipient_invalid',
+            'failure_message' => 'Recipient is invalid.',
+            'attempted_at' => now(),
+            'completed_at' => now(),
+        ]);
 
         $this->actingAs($user, 'sanctum')
             ->putJson('/payment-accounts/paystack', [
@@ -154,11 +182,16 @@ class PaymentAccountTest extends TestCase
             ])
             ->assertOk();
 
-        $this->assertSame(CashbackStatus::PROCESSING, $cashback->refresh()->status);
-        $this->assertDatabaseHas('payment_attempts', [
-            'cashback_id' => $cashback->id,
-            'status' => PaymentAttemptStatus::PROCESSING->value,
-        ]);
+        $cashback->refresh();
+        $attempts = $cashback->paymentAttempts()->orderBy('id')->get();
+
+        $this->assertSame(CashbackStatus::PROCESSING, $cashback->status);
+        $this->assertCount(2, $attempts);
+        $this->assertSame($failedAttempt->id, $attempts[0]->id);
+        $this->assertSame(PaymentAttemptStatus::FAILED, $attempts[0]->status);
+        $this->assertSame(PaymentAttemptStatus::PROCESSING, $attempts[1]->status);
+        $this->assertSame('RCP_replacement_recipient', $attempts[1]->request_payload['recipient_reference']);
+        $this->assertSame("cashback_{$cashback->id}_attempt_2", $attempts[1]->request_payload['reference']);
     }
 
     public function test_a_user_can_list_only_their_payment_accounts(): void

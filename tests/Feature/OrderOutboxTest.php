@@ -133,4 +133,83 @@ class OrderOutboxTest extends TestCase
         $this->assertNotNull($message->refresh()->published_at);
         $this->assertSame(1, $message->attempts);
     }
+
+    public function test_failed_scheduled_relay_releases_the_claim_for_a_later_retry(): void
+    {
+        $this->mock(OutboxEventPublisher::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('publish')
+                ->once()
+                ->andThrow(new RuntimeException('Queue is unavailable.'));
+        });
+        $user = User::factory()->create();
+        $order = Order::factory()->for($user)->create();
+        $message = app(OutboxRecorder::class)->recordOrderCompleted($order);
+
+        $this->artisan('outbox:relay')
+            ->expectsOutput('Published 0 outbox message(s); 1 failed.')
+            ->assertFailed();
+
+        $message->refresh();
+        $this->assertNull($message->published_at);
+        $this->assertNull($message->processing_at);
+        $this->assertNull($message->processing_token);
+        $this->assertSame(1, $message->attempts);
+        $this->assertSame('Queue is unavailable.', $message->last_error);
+
+        $this->app->forgetInstance(OutboxEventPublisher::class);
+        Event::fake([OrderCompleted::class]);
+
+        $this->artisan('outbox:relay')
+            ->expectsOutput('Published 1 outbox message(s); 0 failed.')
+            ->assertSuccessful();
+
+        Event::assertDispatchedTimes(OrderCompleted::class, 1);
+        $this->assertNotNull($message->refresh()->published_at);
+        $this->assertSame(2, $message->attempts);
+        $this->assertNull($message->last_error);
+    }
+
+    public function test_relay_recovers_an_outbox_message_abandoned_by_a_dead_process(): void
+    {
+        Event::fake([OrderCompleted::class]);
+        $user = User::factory()->create();
+        $order = Order::factory()->for($user)->create();
+        $message = app(OutboxRecorder::class)->recordOrderCompleted($order);
+        $message->update([
+            'processing_at' => now()->subMinutes(6),
+            'processing_token' => '2f797379-4713-4a58-88f7-b50ef968eef9',
+        ]);
+
+        $this->artisan('outbox:relay')
+            ->expectsOutput('Published 1 outbox message(s); 0 failed.')
+            ->assertSuccessful();
+
+        Event::assertDispatchedTimes(OrderCompleted::class, 1);
+        $message->refresh();
+        $this->assertNotNull($message->published_at);
+        $this->assertNull($message->processing_at);
+        $this->assertNull($message->processing_token);
+        $this->assertSame(1, $message->attempts);
+    }
+
+    public function test_relay_does_not_duplicate_work_owned_by_an_active_process(): void
+    {
+        Event::fake([OrderCompleted::class]);
+        $user = User::factory()->create();
+        $order = Order::factory()->for($user)->create();
+        $message = app(OutboxRecorder::class)->recordOrderCompleted($order);
+        $message->update([
+            'processing_at' => now(),
+            'processing_token' => '11e9c87e-b49c-4e2b-a9f8-a22874c303b5',
+        ]);
+
+        $this->artisan('outbox:relay')
+            ->expectsOutput('Published 0 outbox message(s); 0 failed.')
+            ->assertSuccessful();
+
+        Event::assertNotDispatched(OrderCompleted::class);
+        $message->refresh();
+        $this->assertNull($message->published_at);
+        $this->assertSame(0, $message->attempts);
+    }
 }
