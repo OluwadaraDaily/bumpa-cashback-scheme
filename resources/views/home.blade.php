@@ -11,7 +11,6 @@
             <div class="hero-actions">
                 <a class="button" href="{{ route('shop') }}">Browse products</a>
             </div>
-            <p class="session-note">Authentication is now connected to Laravel sessions.</p>
         @else
             <p class="eyebrow">Shop. Achieve. Get rewarded.</p>
             <h1>Turn every purchase into progress.</h1>

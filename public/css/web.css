@@ -494,6 +494,161 @@ input:focus {
     margin: 8px 0 0;
 }
 
+.cashback-summary {
+    background: var(--primary-dark);
+    border-radius: 18px;
+    color: white;
+    display: grid;
+    gap: 24px;
+    grid-template-columns: 1fr 1fr;
+    margin-bottom: 36px;
+    padding: 24px;
+}
+
+.cashback-summary .eyebrow {
+    color: #ccfbf1;
+}
+
+.cashback-summary h2 {
+    font-size: 1.8rem;
+    margin: 8px 0 0;
+}
+
+.cashback-list {
+    display: grid;
+    gap: 12px;
+}
+
+.cashback-card,
+.cashback-detail-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 20px;
+}
+
+.cashback-card-head,
+.cashback-card-foot,
+.cashback-detail-heading,
+.cashback-detail-rows div {
+    align-items: center;
+    display: flex;
+    gap: 18px;
+    justify-content: space-between;
+}
+
+.cashback-card-head h2 {
+    font-size: 1.1rem;
+    margin: 4px 0;
+}
+
+.cashback-card-foot {
+    border-top: 1px solid var(--line);
+    margin-top: 18px;
+    padding-top: 16px;
+}
+
+.cashback-card-foot strong,
+.cashback-detail-heading h2 {
+    color: var(--primary-dark);
+}
+
+.cashback-card-foot strong {
+    font-size: 1.15rem;
+}
+
+.cashback-status {
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    padding: 8px 12px;
+    white-space: nowrap;
+}
+
+.cashback-status-pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.cashback-status-processing {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.cashback-status-paid {
+    background: var(--success-soft);
+    color: var(--success);
+}
+
+.cashback-status-failed {
+    background: #fef2f2;
+    color: var(--danger);
+}
+
+.cashback-detail-layout {
+    display: grid;
+    gap: 24px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.cashback-detail-heading {
+    align-items: start;
+}
+
+.cashback-detail-heading h2 {
+    font-size: 2rem;
+    margin: 8px 0 0;
+}
+
+.cashback-detail-rows {
+    border-top: 1px solid var(--line);
+    margin-top: 24px;
+    padding-top: 8px;
+}
+
+.cashback-detail-rows div {
+    border-bottom: 1px solid var(--line);
+    padding: 14px 0;
+}
+
+.cashback-detail-rows div:last-child {
+    border-bottom: 0;
+}
+
+.cashback-detail-rows span {
+    color: var(--muted);
+}
+
+.payment-attempt {
+    border-top: 1px solid var(--line);
+    margin-top: 16px;
+    padding-top: 16px;
+}
+
+.payment-attempt:first-of-type {
+    margin-top: 20px;
+}
+
+.payment-attempt p {
+    margin: 6px 0 0;
+}
+
+.payment-attempt-meta {
+    color: var(--muted);
+    display: grid;
+    font-size: 0.8rem;
+    gap: 4px;
+    margin-top: 12px;
+}
+
+.payment-failure {
+    color: var(--danger);
+}
+
+.payment-empty {
+    margin: 20px 0 0;
+}
+
 .progress-summary {
     background: var(--primary-dark);
     border-radius: 18px;
@@ -909,7 +1064,9 @@ input:focus {
     }
 
     .progress-summary,
-    .progress-layout {
+    .progress-layout,
+    .cashback-summary,
+    .cashback-detail-layout {
         grid-template-columns: 1fr;
     }
 
@@ -926,6 +1083,16 @@ input:focus {
     }
 
     .order-card-foot strong {
+        margin-left: 0;
+    }
+
+    .cashback-card-head,
+    .cashback-card-foot {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .cashback-card-foot strong {
         margin-left: 0;
     }
 }
