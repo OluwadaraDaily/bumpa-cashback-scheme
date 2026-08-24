@@ -34,8 +34,9 @@ class AchievementTest extends TestCase
             'user_id' => $user->id,
             'achievement_id' => $this->achievementId('5 Purchases'),
         ]);
-        Event::assertDispatched(AchievementUnlocked::class, function (AchievementUnlocked $event): bool {
-            return $event->achievement_name === 'First Purchase';
+        Event::assertDispatched(AchievementUnlocked::class, function (AchievementUnlocked $event) use ($user): bool {
+            return $event->achievement_name === 'First Purchase'
+                && $event->user->is($user);
         });
     }
 

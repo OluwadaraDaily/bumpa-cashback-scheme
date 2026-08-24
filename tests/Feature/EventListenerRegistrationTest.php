@@ -3,12 +3,14 @@
 namespace Tests\Feature;
 
 use App\Events\AchievementsEvaluated;
+use App\Events\AchievementUnlocked;
 use App\Events\BadgeUnlocked;
 use App\Events\CashbackCreated;
 use App\Events\OrderCompleted;
 use App\Listeners\CreateCashback;
 use App\Listeners\EvaluateAchievements;
 use App\Listeners\EvaluateBadges;
+use App\Listeners\StoreAchievementNotification;
 use App\Listeners\TransferCashback;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as FrameworkEventServiceProvider;
@@ -29,6 +31,7 @@ class EventListenerRegistrationTest extends TestCase
 
         $expectedListeners = [
             OrderCompleted::class => EvaluateAchievements::class,
+            AchievementUnlocked::class => StoreAchievementNotification::class,
             AchievementsEvaluated::class => EvaluateBadges::class,
             BadgeUnlocked::class => CreateCashback::class,
             CashbackCreated::class => TransferCashback::class,

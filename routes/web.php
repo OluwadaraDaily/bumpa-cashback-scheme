@@ -1,8 +1,9 @@
 <?php
 
 use App\Http\Controllers\AchievementStatusController;
-use App\Http\Controllers\Web\AuthController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Web\AchievementController;
+use App\Http\Controllers\Web\AuthController;
 use App\Http\Controllers\Web\CartController;
 use App\Http\Controllers\Web\CashbackController;
 use App\Http\Controllers\Web\CheckoutController;
@@ -34,6 +35,11 @@ Route::post('/web/logout', [AuthController::class, 'logout'])
     ->name('web.logout');
 
 Route::middleware('auth')->group(function (): void {
+    Route::get('/notifications', [NotificationController::class, 'index'])
+        ->name('notifications.index');
+    Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])
+        ->name('notifications.read');
+
     Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements.index');
 
     Route::prefix('account')->group(function (): void {

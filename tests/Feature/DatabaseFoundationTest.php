@@ -21,6 +21,7 @@ class DatabaseFoundationTest extends TestCase
             'jobs',
             'job_batches',
             'failed_jobs',
+            'notifications',
         ] as $table) {
             $this->assertTrue(Schema::hasTable($table), "The [{$table}] table does not exist.");
         }

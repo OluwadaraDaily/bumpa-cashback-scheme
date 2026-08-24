@@ -7,12 +7,13 @@ Laravel application for purchasing products, unlocking achievements and badges, 
 1. An authenticated user creates an order.
 2. Stock is checked and reduced inside a database transaction.
 3. The completed order event is placed on the queue.
-4. Achievements are evaluated and unlocked once per user.
-5. Badges are evaluated when achievements are unlocked.
-6. A pending cashback is created for a newly unlocked badge.
-7. A queued payment transfer is started when the user has an active payment account.
-8. Paystack sends a webhook when the transfer finishes.
-9. The webhook marks the cashback as `paid` or `failed`.
+4. Achievements are evaluated and unlocked once per user, firing `AchievementUnlocked`.
+5. A queued listener stores an unread achievement notification for the user.
+6. Badges are evaluated after each achievement evaluation.
+7. A pending cashback is created for a newly unlocked badge.
+8. A queued payment transfer is started when the user has an active payment account.
+9. Paystack sends a webhook when the transfer finishes.
+10. The webhook marks the cashback as `paid` or `failed`.
 
 ## Design choices
 
@@ -24,6 +25,7 @@ Laravel application for purchasing products, unlocking achievements and badges, 
 - Orders support multiple products and store the product name and price at the time of purchase.
 - `Idempotency-Key` is required when creating an order to prevent duplicate orders on retries.
 - Achievements and badges are seeded and evaluated using database records.
+- Achievement notifications are stored in the database so users can see them after queued processing finishes.
 - A badge requires all of its linked achievements.
 - Payment accounts store only a provider recipient reference. Bank details are not stored by this application.
 - Cashback transfers are queued and remain `processing` until the provider webhook confirms the final result.
@@ -138,6 +140,15 @@ There is no `/api` prefix in this project.
 | `GET` | `/payment-accounts` | List the current user's payment accounts |
 | `PUT` | `/payment-accounts/paystack` | Save or replace a Paystack recipient reference |
 | `DELETE` | `/payment-accounts/paystack` | Deactivate the Paystack account |
+
+### Browser notification endpoints
+
+These JSON endpoints use the authenticated browser session. The UI checks them after checkout and displays unread achievement notifications.
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET` | `/notifications` | List unread notifications |
+| `PATCH` | `/notifications/{id}/read` | Mark a notification as read |
 
 ### Admin endpoint
 
