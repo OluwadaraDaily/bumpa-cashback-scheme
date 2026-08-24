@@ -46,7 +46,11 @@
                             </div>
                             <p>{{ $achievement->description }}</p>
                             @if ($unlocked)
-                                <small>Unlocked {{ $unlocked->pivot->unlocked_at?->format('M j, Y') }}</small>
+                                <small>
+                                    Unlocked {{ $unlocked->pivot->unlocked_at
+                                        ? \Illuminate\Support\Carbon::parse($unlocked->pivot->unlocked_at)->format('M j, Y')
+                                        : 'recently' }}
+                                </small>
                             @else
                                 <small>Keep shopping to reach this milestone.</small>
                             @endif
@@ -86,7 +90,11 @@
                             @endforeach
                         </div>
                         @if ($unlocked)
-                            <small>Unlocked {{ $unlocked->pivot->unlocked_at?->format('M j, Y') }}</small>
+                            <small>
+                                Unlocked {{ $unlocked->pivot->unlocked_at
+                                    ? \Illuminate\Support\Carbon::parse($unlocked->pivot->unlocked_at)->format('M j, Y')
+                                    : 'recently' }}
+                            </small>
                         @endif
                     </article>
                 @endforeach
