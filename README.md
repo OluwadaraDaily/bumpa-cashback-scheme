@@ -215,7 +215,15 @@ docker compose exec app tail -f storage/logs/laravel.log
 
 ## Run tests
 
-The test suite uses an in-memory SQLite database and synchronous queues. From an environment with PHP, Composer, and the SQLite PHP extension:
+The test suite forces an in-memory SQLite database, synchronous queues, and the fake payment provider. It does not use the development MySQL database or Redis.
+
+Run the tests inside Docker:
+
+```bash
+docker compose exec app php artisan test
+```
+
+Or run them from an environment with PHP, Composer, and the SQLite PHP extension:
 
 ```bash
 composer install
