@@ -32,6 +32,7 @@ Laravel application for purchasing products, unlocking achievements and badges, 
 - A shared test recipient can be assigned automatically until a user replaces it with their own recipient reference.
 - Activating or updating an account retries the user's pending or failed cashbacks.
 - Cashback transfers are queued and remain `processing` until the provider webhook confirms the final result.
+- Temporary provider exceptions are retried with the same transfer reference. Exhausted retries mark the cashback as `failed` so it can be retried safely later.
 - The default payment provider is fake so local work cannot accidentally send real money.
 
 ## Requirements

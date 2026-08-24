@@ -12,6 +12,7 @@ use App\Models\Cashback;
 use App\Models\PaymentAttempt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class CashbackTransferService
 {
@@ -161,6 +162,51 @@ class CashbackTransferService
                 'payment_attempt_id' => $transfer['attempt_id'],
                 'provider' => $transfer['provider'],
                 'failure_code' => $result->failureCode,
+            ]);
+        }
+    }
+
+    public function markFailedAfterRetries(Cashback $cashback, Throwable $exception): void
+    {
+        $result = DB::transaction(function () use ($cashback): ?array {
+            $cashback = Cashback::query()->lockForUpdate()->findOrFail($cashback->id);
+
+            if ($cashback->status === CashbackStatus::PAID) {
+                return null;
+            }
+
+            $attempt = $cashback->paymentAttempts()
+                ->where('status', PaymentAttemptStatus::PROCESSING->value)
+                ->latest('id')
+                ->lockForUpdate()
+                ->first();
+
+            if (! $attempt) {
+                return null;
+            }
+
+            $attempt->update([
+                'status' => PaymentAttemptStatus::FAILED,
+                'failure_code' => 'queue_retries_exhausted',
+                'failure_message' => 'Cashback transfer failed after all queue retries.',
+                'completed_at' => now(),
+            ]);
+            $cashback->update([
+                'status' => CashbackStatus::FAILED,
+                'paid_at' => null,
+            ]);
+
+            return [
+                'cashback_id' => $cashback->id,
+                'payment_attempt_id' => $attempt->id,
+                'user_id' => $cashback->user_id,
+            ];
+        });
+
+        if ($result) {
+            Log::error('Cashback transfer retries exhausted', [
+                ...$result,
+                'exception' => $exception::class,
             ]);
         }
     }
