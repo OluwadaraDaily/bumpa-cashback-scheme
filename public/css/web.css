@@ -494,6 +494,154 @@ input:focus {
     margin: 8px 0 0;
 }
 
+.progress-summary {
+    background: var(--primary-dark);
+    border-radius: 18px;
+    color: white;
+    display: grid;
+    gap: 24px;
+    grid-template-columns: 1fr 1fr;
+    margin-bottom: 36px;
+    padding: 24px;
+}
+
+.progress-summary .eyebrow,
+.progress-summary .muted {
+    color: #ccfbf1;
+}
+
+.progress-summary h2 {
+    font-size: 1.35rem;
+    margin: 8px 0 0;
+}
+
+.progress-summary .muted {
+    margin: 8px 0 0;
+}
+
+.progress-layout {
+    display: grid;
+    gap: 36px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.subsection-heading {
+    align-items: end;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.subsection-heading h2 {
+    font-size: 1.5rem;
+    margin: 6px 0 0;
+}
+
+.achievement-list,
+.badge-list {
+    display: grid;
+    gap: 12px;
+}
+
+.achievement-card,
+.badge-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 18px;
+}
+
+.achievement-card {
+    align-items: start;
+    display: grid;
+    gap: 14px;
+    grid-template-columns: 44px minmax(0, 1fr);
+}
+
+.achievement-card.is-unlocked,
+.badge-card.is-unlocked {
+    border-color: #99f6e4;
+}
+
+.achievement-mark {
+    align-items: center;
+    background: #f1f5f9;
+    border-radius: 50%;
+    color: var(--muted);
+    display: flex;
+    font-size: 1.2rem;
+    font-weight: 900;
+    height: 44px;
+    justify-content: center;
+    width: 44px;
+}
+
+.is-unlocked .achievement-mark {
+    background: var(--success-soft);
+    color: var(--success);
+}
+
+.achievement-heading,
+.badge-heading {
+    align-items: start;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+}
+
+.achievement-heading h3,
+.badge-heading h3 {
+    font-size: 1rem;
+    margin: 0;
+}
+
+.achievement-content p,
+.badge-card > p {
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin: 8px 0;
+}
+
+.achievement-card small,
+.badge-card small {
+    color: var(--muted);
+    font-size: 0.78rem;
+}
+
+.achievement-status {
+    background: #f1f5f9;
+    border-radius: 999px;
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 6px 9px;
+    white-space: nowrap;
+}
+
+.is-unlocked .achievement-status {
+    background: var(--success-soft);
+    color: var(--success);
+}
+
+.badge-requirements {
+    border-top: 1px solid var(--line);
+    display: grid;
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 14px;
+}
+
+.badge-requirements span {
+    color: var(--muted);
+    font-size: 0.82rem;
+}
+
+.badge-requirements .requirement-complete {
+    color: var(--success);
+    font-weight: 700;
+}
+
 .order-list {
     display: grid;
     gap: 12px;
@@ -758,6 +906,17 @@ input:focus {
 
     .confirmation-card {
         padding: 36px 24px;
+    }
+
+    .progress-summary,
+    .progress-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .subsection-heading {
+        align-items: start;
+        flex-direction: column;
+        gap: 12px;
     }
 
     .order-card-head,

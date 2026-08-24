@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AchievementStatusController;
 use App\Http\Controllers\Web\AuthController;
+use App\Http\Controllers\Web\AchievementController;
 use App\Http\Controllers\Web\CartController;
 use App\Http\Controllers\Web\CheckoutController;
 use App\Http\Controllers\Web\OrderController;
@@ -32,6 +33,7 @@ Route::post('/web/logout', [AuthController::class, 'logout'])
     ->name('web.logout');
 
 Route::middleware('auth')->group(function (): void {
+    Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements.index');
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
 
