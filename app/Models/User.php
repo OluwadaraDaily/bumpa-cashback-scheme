@@ -47,6 +47,16 @@ class User extends Authenticatable
         return $this->hasMany(UserBadge::class);
     }
 
+    public function paymentAccounts(): HasMany
+    {
+        return $this->hasMany(PaymentAccount::class);
+    }
+
+    public function cashbacks(): HasMany
+    {
+        return $this->hasMany(Cashback::class);
+    }
+
     /**
      * Get the attributes that should be cast.
      *

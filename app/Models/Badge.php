@@ -37,4 +37,9 @@ class Badge extends Model
     {
         return $this->hasMany(UserBadge::class);
     }
+
+    public function cashbacks(): HasMany
+    {
+        return $this->hasMany(Cashback::class);
+    }
 }
