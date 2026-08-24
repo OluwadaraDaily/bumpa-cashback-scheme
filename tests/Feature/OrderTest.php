@@ -99,8 +99,8 @@ class OrderTest extends TestCase
     public function test_reusing_an_idempotency_key_with_different_items_is_rejected(): void
     {
         $user = User::factory()->create();
-        $firstProduct = Product::factory()->create();
-        $secondProduct = Product::factory()->create();
+        $firstProduct = Product::factory()->create(['quantity' => 5]);
+        $secondProduct = Product::factory()->create(['quantity' => 5]);
 
         $this->actingAs($user, 'sanctum')
             ->withHeader('Idempotency-Key', 'order-003')
