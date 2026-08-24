@@ -199,18 +199,42 @@ For local development, `PAYSTACK_DEFAULT_RECIPIENT` is assigned to new users aut
 
 When a user saves a replacement account, pending or previously failed cashback is attached to the active account and queued again.
 
-For real Paystack transfers, update `.env`:
+### Paystack test mode
+
+1. Get your test secret key from the Paystack dashboard. It starts with `sk_test_`.
+2. Create a transfer recipient using Paystack's Nigerian transfer test account:
+
+```text
+Account name: Bumpa Cashback Test User
+Bank: Zenith Bank
+Bank code: 057
+Account number: 0000000000
+Currency: NGN
+Recipient type: nuban
+```
+
+Send those details to `POST https://api.paystack.co/transferrecipient` using your test secret key. Copy the `data.recipient_code` value from the response. Recipient codes are tied to a Paystack integration, so each developer must create their own.
+
+3. Add the test key and recipient code to `.env`:
 
 ```env
 PAYMENT_PROVIDER=paystack
-PAYSTACK_SECRET_KEY=your_secret_key
+PAYSTACK_SECRET_KEY=sk_test_your_key
 PAYSTACK_DEFAULT_RECIPIENT=RCP_your_test_recipient
 PAYSTACK_BASE_URL=https://api.paystack.co
 PAYSTACK_TIMEOUT=10
 PAYSTACK_WEBHOOK_IPS=52.31.139.75,52.49.173.169,52.214.14.220
 ```
 
-Configure this webhook URL with Paystack:
+Never commit the test secret key. Recreate the application containers after changing `.env`:
+
+```bash
+docker compose up -d --force-recreate app worker
+```
+
+4. In the Paystack test dashboard, open **Settings → Preferences** and disable **Confirm transfers before sending**. This allows queued cashback transfers to run without manual OTP approval.
+
+5. Configure a public webhook URL with Paystack:
 
 ```text
 https://your-domain.example/cashback/webhook
@@ -220,6 +244,8 @@ The webhook verifies Paystack's signature, optionally checks the source IP, matc
 
 Paystack references:
 
+- [Test payment details](https://paystack.com/docs/payments/test-payments/)
+- [Transfer recipients](https://paystack.com/docs/transfers/creating-transfer-recipients/)
 - [Webhooks](https://paystack.com/docs/payments/webhooks/)
 - [Single transfers](https://paystack.com/docs/transfers/single-transfers/)
 
