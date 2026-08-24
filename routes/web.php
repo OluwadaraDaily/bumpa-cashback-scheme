@@ -4,6 +4,7 @@ use App\Http\Controllers\AchievementStatusController;
 use App\Http\Controllers\Web\AuthController;
 use App\Http\Controllers\Web\CartController;
 use App\Http\Controllers\Web\CheckoutController;
+use App\Http\Controllers\Web\OrderController;
 use App\Http\Controllers\Web\ShopController;
 use Illuminate\Support\Facades\Route;
 
@@ -31,6 +32,9 @@ Route::post('/web/logout', [AuthController::class, 'logout'])
     ->name('web.logout');
 
 Route::middleware('auth')->group(function (): void {
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+
     Route::get('/checkout', [CheckoutController::class, 'show'])->name('checkout.show');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
     Route::get('/checkout/confirmation/{order}', [CheckoutController::class, 'confirmation'])

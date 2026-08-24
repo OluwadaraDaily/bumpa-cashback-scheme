@@ -18,6 +18,7 @@
         </div>
 
         <div class="hero-actions">
+            <a class="button" href="{{ route('orders.show', $order) }}">View order</a>
             <a class="button" href="{{ route('shop') }}">Continue shopping</a>
             <a class="button button-secondary" href="{{ route('home') }}">Go home</a>
         </div>

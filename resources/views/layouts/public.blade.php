@@ -13,6 +13,7 @@
             <a href="{{ route('shop') }}">Shop</a>
             <a href="{{ route('cart.index') }}">Cart ({{ collect(session('cart', []))->sum() }})</a>
             @auth
+                <a href="{{ route('orders.index') }}">Orders</a>
                 <span class="nav-user">Hi, {{ auth()->user()->username }}</span>
                 <form action="{{ route('web.logout') }}" method="POST">
                     @csrf

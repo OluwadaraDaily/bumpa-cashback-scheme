@@ -494,6 +494,105 @@ input:focus {
     margin: 8px 0 0;
 }
 
+.order-list {
+    display: grid;
+    gap: 12px;
+}
+
+.order-card,
+.order-detail-summary {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+}
+
+.order-card {
+    padding: 20px;
+}
+
+.order-card-head,
+.order-card-foot {
+    align-items: center;
+    display: flex;
+    gap: 18px;
+    justify-content: space-between;
+}
+
+.order-card-foot {
+    border-top: 1px solid var(--line);
+    margin-top: 18px;
+    padding-top: 16px;
+}
+
+.order-card-foot strong {
+    color: var(--primary-dark);
+    margin-left: auto;
+}
+
+.order-status {
+    background: #f0fdf4;
+    border-radius: 999px;
+    color: var(--success);
+    font-size: 0.8rem;
+    font-weight: 800;
+    padding: 8px 12px;
+}
+
+.pagination {
+    display: flex;
+    gap: 8px;
+    list-style: none;
+    margin: 24px 0 0;
+    padding: 0;
+}
+
+.pagination a,
+.pagination span {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 12px;
+}
+
+.pagination .active span {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+.order-detail-layout {
+    align-items: start;
+    display: grid;
+    gap: 24px;
+    grid-template-columns: minmax(0, 1fr) 300px;
+}
+
+.order-detail-items {
+    display: grid;
+    gap: 12px;
+}
+
+.order-detail-item {
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+    padding: 16px;
+}
+
+.order-detail-item h2 {
+    font-size: 1rem;
+    margin: 0 0 6px;
+}
+
+.order-detail-summary {
+    padding: 24px;
+    position: sticky;
+    top: 24px;
+}
+
 .checkout-layout {
     display: grid;
     gap: 24px;
@@ -629,6 +728,14 @@ input:focus {
         grid-template-columns: 1fr;
     }
 
+    .order-detail-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .order-detail-summary {
+        position: static;
+    }
+
     .cart-item {
         align-items: start;
         grid-template-columns: 56px minmax(0, 1fr);
@@ -651,5 +758,15 @@ input:focus {
 
     .confirmation-card {
         padding: 36px 24px;
+    }
+
+    .order-card-head,
+    .order-card-foot {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .order-card-foot strong {
+        margin-left: 0;
     }
 }
