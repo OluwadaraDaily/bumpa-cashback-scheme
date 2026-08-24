@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AchievementStatusController;
 use App\Http\Controllers\Web\AuthController;
+use App\Http\Controllers\Web\CartController;
 use App\Http\Controllers\Web\ShopController;
 use Illuminate\Support\Facades\Route;
 
@@ -10,6 +11,11 @@ Route::get('/', function () {
 })->name('home');
 
 Route::get('/shop', [ShopController::class, 'index'])->name('shop');
+
+Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+Route::post('/cart/items', [CartController::class, 'store'])->name('cart.items.store');
+Route::patch('/cart/items/{product}', [CartController::class, 'update'])->name('cart.items.update');
+Route::delete('/cart/items/{product}', [CartController::class, 'destroy'])->name('cart.items.destroy');
 
 Route::middleware('guest')->group(function (): void {
     Route::view('/login', 'auth.login')->name('login');

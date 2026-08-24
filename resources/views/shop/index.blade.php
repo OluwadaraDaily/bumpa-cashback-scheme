@@ -22,6 +22,15 @@
                 <div class="product-stock {{ $product->quantity > 0 ? 'stock-available' : 'stock-empty' }}">
                     {{ $product->quantity > 0 ? $product->quantity.' in stock' : 'Out of stock' }}
                 </div>
+                @if ($product->quantity > 0)
+                    <form class="product-action" action="{{ route('cart.items.store') }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="product_id" value="{{ $product->id }}">
+                        <label class="sr-only" for="product-quantity-{{ $product->id }}">Quantity</label>
+                        <input id="product-quantity-{{ $product->id }}" name="quantity" type="number" min="1" max="{{ $product->quantity }}" value="1">
+                        <button class="button button-full" type="submit">Add to cart</button>
+                    </form>
+                @endif
             </article>
         @empty
             <div class="empty-state">
